@@ -259,6 +259,7 @@ satSet.draw = function(pMatrix, camMatrix) {
   };
 
   satSet.getIdFromIntlDes = function(intlDes) {
+    if (!satData) return -1;
     for(var i=0; i <satData.length; i++) {
       if(satData[i].INTLDES === intlDes || satData[i].intlDes === intlDes) {
         return i;
@@ -268,7 +269,9 @@ satSet.draw = function(pMatrix, camMatrix) {
   };
 
   satSet.getScreenCoords = function(i, pMatrix, camMatrix) {
+    if (i < 0) return {x: 0, y: 0}
     var pos = satSet.getSat(i).position;
+    if (!pos) return {x: 0, y: 0}
     var posVec4 = vec4.fromValues(pos.x, pos.y, pos.z, 1);
     var transform = mat4.create();
 

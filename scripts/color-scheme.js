@@ -28,27 +28,27 @@
       pickableBuf : this.pickableBuf
     };
 	};
-	
+
 	ColorScheme.init = function() {
 		ColorScheme.default = new ColorScheme(function(satId){
 			var sat = satSet.getSat(satId);
       var color;
-			if(sat.OBJECT_TYPE === 'PAYLOAD') {
-				color = [1.0, 0.2, 0.0, 1.0];
-			} else if (sat.OBJECT_TYPE === 'ROCKET BODY'){
-				color = [0.2, 0.5, 1.0, 0.85];
-			//	return [0.6, 0.6, 0.6];
-			} else if (sat.OBJECT_TYPE === 'DEBRIS') {
-				color = [0.5, 0.5, 0.5, 0.85];
-			} else {
-				color = [1.0, 1.0, 0.0, 1.0];
-			}
+			// if(sat.OBJECT_TYPE === 'PAYLOAD') {
+			// 	color = [1.0, 0.2, 0.0, 1.0];
+			// } else if (sat.OBJECT_TYPE === 'ROCKET BODY'){
+			// 	color = [0.2, 0.5, 1.0, 0.85];
+			// //	return [0.6, 0.6, 0.6];
+			// } else if (sat.OBJECT_TYPE === 'DEBRIS') {
+			 	color = [0.5, 0.5, 0.5, 0.45];
+			// } else {
+			//	color = [1.0, 1.0, 0.0, 1.0];
+			//}
       return {
         color : color,
         pickable : true
       };
 		});
-		
+
 		ColorScheme.apogee = new ColorScheme(function(satId) {
 			var ap = satSet.getSat(satId).apogee;
 			var gradientAmt = Math.min(ap / 45000, 1.0);

@@ -1,4 +1,4 @@
-// **** gl-matrix-min.js ***
+// This file is generated using the scripts-loader.php file// Source code changes should be made in the files that are// used for this file//// **** gl-matrix-min.js ***
 /**
  * @fileoverview gl-matrix - High performance matrix and vector operations
  * @author Brandon Jones
@@ -62,13 +62,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 // **** color-scheme.js ***
 /* global groups */
 (function() {
-	
+
 	var ColorScheme = function(colorizer) {
 		this.colorizer = colorizer;
 		this.colorBuf = gl.createBuffer();
     this.pickableBuf = gl.createBuffer();
 	};
-	
+
 	ColorScheme.prototype.calculateColorBuffers = function() {
 		var numSats = satSet.numSats;
 		var colorData = new Float32Array(numSats*4);
@@ -90,27 +90,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
       pickableBuf : this.pickableBuf
     };
 	};
-	
+
 	ColorScheme.init = function() {
 		ColorScheme.default = new ColorScheme(function(satId){
 			var sat = satSet.getSat(satId);
       var color;
-			if(sat.OBJECT_TYPE === 'PAYLOAD') {
-				color = [1.0, 0.2, 0.0, 1.0];
-			} else if (sat.OBJECT_TYPE === 'ROCKET BODY'){
-				color = [0.2, 0.5, 1.0, 0.85];
-			//	return [0.6, 0.6, 0.6];
-			} else if (sat.OBJECT_TYPE === 'DEBRIS') {
-				color = [0.5, 0.5, 0.5, 0.85];
-			} else {
-				color = [1.0, 1.0, 0.0, 1.0];
-			}
+			// if(sat.OBJECT_TYPE === 'PAYLOAD') {
+			// 	color = [1.0, 0.2, 0.0, 1.0];
+			// } else if (sat.OBJECT_TYPE === 'ROCKET BODY'){
+			// 	color = [0.2, 0.5, 1.0, 0.85];
+			// //	return [0.6, 0.6, 0.6];
+			// } else if (sat.OBJECT_TYPE === 'DEBRIS') {
+			 	color = [0.5, 0.5, 0.5, 0.45];
+			// } else {
+			//	color = [1.0, 1.0, 0.0, 1.0];
+			//}
       return {
         color : color,
         pickable : true
       };
 		});
-		
+
 		ColorScheme.apogee = new ColorScheme(function(satId) {
 			var ap = satSet.getSat(satId).apogee;
 			var gradientAmt = Math.min(ap / 45000, 1.0);
@@ -119,21 +119,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
         pickable : true
       }
 		});
-		
+
 		ColorScheme.velocity = new ColorScheme(function(satId) {
 			var vel = satSet.getSat(satId).velocity;
 			var gradientAmt = Math.min(vel / 15, 1.0);
 			return {
         color : [1.0 - gradientAmt, gradientAmt, 0.0, 1.0],
-        pickable : true 
+        pickable : true
       };
 		});
-		
+
 		ColorScheme.group = new ColorScheme(function(satId) {
 			if(groups.selectedGroup.hasSat(satId)) {
 				return {
           color : [1.0, 0.2, 0.0, 1.0],
-          pickable : true 
+          pickable : true
         };
 			} else {
 				return {
@@ -142,14 +142,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 			 };
       }
 		});
-    
+
     $('#color-schemes-submenu').mouseover(function() {
- 
+
     });
 	};
-	
+
 	window.ColorScheme = ColorScheme;
 })();
+
 // **** end color-scheme.js ***
 
 // **** groups.js ***
@@ -522,7 +523,7 @@ var pathShader;
 var selectOrbitBuf;
 var hoverOrbitBuf;
 
-var selectColor = [0.0, 1.0, 0.0, 1.0];
+var selectColor = [0.0, 0.0, 1.0, 1.0];
 var hoverColor =  [0.5, 0.5, 1.0, 1.0];
 var groupColor = [0.3, 0.5, 1.0, 0.4];
 
@@ -704,6 +705,7 @@ orbitDisplay.getPathShader = function() {
 
 window.orbitDisplay = orbitDisplay;
 })();
+
 // **** end orbit-display.js ***
 
 // **** line.js ***
@@ -1332,6 +1334,7 @@ satSet.draw = function(pMatrix, camMatrix) {
   };
 
   satSet.getIdFromIntlDes = function(intlDes) {
+    if (!satData) return -1;
     for(var i=0; i <satData.length; i++) {
       if(satData[i].INTLDES === intlDes || satData[i].intlDes === intlDes) {
         return i;
@@ -1341,7 +1344,9 @@ satSet.draw = function(pMatrix, camMatrix) {
   };
 
   satSet.getScreenCoords = function(i, pMatrix, camMatrix) {
+    if (i < 0) return {x: 0, y: 0}
     var pos = satSet.getSat(i).position;
+    if (!pos) return {x: 0, y: 0}
     var posVec4 = vec4.fromValues(pos.x, pos.y, pos.z, 1);
     var transform = mat4.create();
 
@@ -1403,6 +1408,7 @@ satSet.draw = function(pMatrix, camMatrix) {
   window.satSet = satSet;
 
 })();
+
 // **** end sat.js ***
 
 // **** main.js ***
@@ -1423,6 +1429,8 @@ satSet.draw = function(pMatrix, camMatrix) {
 /* global orbitDisplay */
 var gl;
 var cubeVertIndexBuffer;
+
+var favoriteSatID = "2007-012Q";
 
 var R2D = 180 / Math.PI;
 
@@ -1491,19 +1499,19 @@ $(document).ready(function() {
   spinner = new Spinner(opts).spin(target);
 
   $('#search-results').perfectScrollbar();
- 
+
   var resizing = false;
-  
+
   $(window).resize(function() {
     if(!resizing) {
       window.setTimeout(function() {
         resizing = false;
         webGlInit();
       }, 500);
-    } 
+    }
     resizing = true;
   });
-  
+
   webGlInit();
   earth.init();
   ColorScheme.init();
@@ -1511,7 +1519,7 @@ $(document).ready(function() {
     orbitDisplay.init();
     groups.init();
     searchBox.init(satData);
-    
+
     debugLine = new Line();
     debugLine2 = new Line();
     debugLine3 = new Line();
@@ -1537,9 +1545,15 @@ $(document).ready(function() {
       }
     }
 
+    if (params.length == 1 && params[0] == "") {
+      // select favorite satellite by default
+      var satID = satSet.getIdFromIntlDes(favoriteSatID)
+      selectSat(satID);
+    }
+
     searchBox.init(satData);
   });
-    
+
 	$('#canvas').on('touchmove', function(evt) {
 		evt.preventDefault();
 	  if(isDragging) {
@@ -1550,7 +1564,7 @@ $(document).ready(function() {
       mouseX = evt.originalEvent.touches[0].clientX;
       mouseY = evt.originalEvent.touches[0].clientY;
 	});
-	
+
     $('#canvas').mousemove(function(evt) {
       if(isDragging) {
         dragHasMoved = true;
@@ -1560,7 +1574,7 @@ $(document).ready(function() {
       mouseX = evt.clientX;
       mouseY = evt.clientY;
     });
-    
+
     $('#canvas').on('wheel', function (evt) {
       var delta = evt.originalEvent.deltaY;
       if(evt.originalEvent.deltaMode === 1) {
@@ -1572,16 +1586,16 @@ $(document).ready(function() {
       initialRotation = false;
       camZoomSnappedOnSat = false;
     });
-    
+
     $('#canvas').click(function(evt) {
-	  
-    
+
+
     });
-    
+
     $('#canvas').contextmenu(function() {
      return false; //stop right-click menu
     });
-	
+
     $('#canvas').mousedown(function(evt){
    //   if(evt.which === 3) {//RMB
         dragPoint = getEarthScreenPoint(evt.clientX, evt.clientY);
@@ -1594,7 +1608,7 @@ $(document).ready(function() {
         initialRotation = false;
    //   }
     });
-	
+
 	$('#canvas').on('touchstart', function (evt) {
     var x = evt.originalEvent.touches[0].clientX;
     var y = evt.originalEvent.touches[0].clientY;
@@ -1607,7 +1621,7 @@ $(document).ready(function() {
     camSnapMode = false;
     initialRotation = false;
 	});
-    
+
     $('#canvas').mouseup(function(evt){
    //   if(evt.which === 3) {//RMB
 		if(!dragHasMoved) {
@@ -1620,32 +1634,32 @@ $(document).ready(function() {
         initialRotation = false;
   //    }
     });
-	
+
 	$('#canvas').on('touchend', function(evt) {
 		dragHasMoved = false;
     isDragging = false;
     initialRotation = false;
 	});
-    
+
     $('.menu-item').mouseover(function(evt){
       $(this).children('.submenu').css({
         display: 'block'
       });
     });
-    
+
     $('.menu-item').mouseout(function(evt){
       $(this).children('.submenu').css({
         display: 'none'
       });
     });
-    
+
     $('#zoom-in').click(function() {
       zoomTarget -= 0.04;
       if(zoomTarget < 0) zoomTarget = 0;
       initialRotation = false;
       camZoomSnappedOnSat = false;
     });
-    
+
     $('#zoom-out').click(function() {
       zoomTarget += 0.04;
       if(zoomTarget > 1) zoomTarget = 1;
@@ -1660,14 +1674,16 @@ $(document).ready(function() {
 function selectSat(satId) {
   selectedSat = satId;
   if(satId === -1) {
-    $('#sat-infobox').fadeOut();
-     orbitDisplay.clearSelectOrbit();
-  } else {
+    satId = satSet.getIdFromIntlDes(favoriteSatID)
+    // $('#sat-infobox').fadeOut();
+    //  orbitDisplay.clearSelectOrbit();
+  }
+
     camZoomSnappedOnSat = true;
     camAngleSnappedOnSat = true;
 
     satSet.selectSat(satId);
- //   camSnapToSat(satId);
+    camSnapToSat(satId);
     var sat = satSet.getSat(satId);
     if(!sat) return;
     orbitDisplay.setSelectOrbit(satId);
@@ -1677,9 +1693,8 @@ function selectSat(satId) {
     $('#sat-type').html(sat.OBJECT_TYPE);
     $('#sat-apogee').html(sat.apogee.toFixed(0) + ' km');
     $('#sat-perigee').html(sat.perigee.toFixed(0) + ' km');
-    $('#sat-inclination').html((sat.inclination * R2D).toFixed(2) + '°');  
+    $('#sat-inclination').html((sat.inclination * R2D).toFixed(2) + '°');
     $('#sat-period').html(sat.period.toFixed(2) + ' min');
-  }
   updateUrl();
 }
 
@@ -1690,49 +1705,49 @@ function browserUnsupported() {
 
 function webGlInit() {
   var can = $('#canvas')[0];
-  
+
   can.width = window.innerWidth;
   can.height = window.innerHeight;
- 
+
   var gl = can.getContext('webgl', {alpha: false}) || can.getContext('experimental-webgl', {alpha: false});
   if(!gl) {
       browserUnsupported();
   }
-  
+
   gl.viewport(0, 0, can.width, can.height);
-  
+
   gl.enable(gl.DEPTH_TEST);
-  gl.enable(0x8642); //enable point sprites(?!) This might get browsers with 
+  gl.enable(0x8642); //enable point sprites(?!) This might get browsers with
                      // underlying OpenGL to behave
                      //although it's not technically a part of the WebGL standard
-  
+
   var pFragShader = gl.createShader(gl.FRAGMENT_SHADER);
   var pFragCode = shaderLoader.getShaderCode('pick-fragment.glsl');
   gl.shaderSource(pFragShader, pFragCode);
   gl.compileShader(pFragShader);
-  
+
   var pVertShader = gl.createShader(gl.VERTEX_SHADER);
   var pVertCode = shaderLoader.getShaderCode('pick-vertex.glsl');
   gl.shaderSource(pVertShader, pVertCode);
   gl.compileShader(pVertShader);
-  
+
   var pickShaderProgram = gl.createProgram();
   gl.attachShader(pickShaderProgram, pVertShader);
   gl.attachShader(pickShaderProgram, pFragShader);
   gl.linkProgram(pickShaderProgram);
-  
+
   pickShaderProgram.aPos = gl.getAttribLocation(pickShaderProgram, 'aPos');
   pickShaderProgram.aColor = gl.getAttribLocation(pickShaderProgram, 'aColor');
   pickShaderProgram.aPickable = gl.getAttribLocation(pickShaderProgram, 'aPickable');
   pickShaderProgram.uCamMatrix = gl.getUniformLocation(pickShaderProgram, 'uCamMatrix');
   pickShaderProgram.uMvMatrix = gl.getUniformLocation(pickShaderProgram, 'uMvMatrix');
   pickShaderProgram.uPMatrix = gl.getUniformLocation(pickShaderProgram, 'uPMatrix');
-  
+
   gl.pickShaderProgram = pickShaderProgram;
-  
+
   pickFb = gl.createFramebuffer();
   gl.bindFramebuffer(gl.FRAMEBUFFER, pickFb);
-  
+
   pickTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, pickTex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -1740,18 +1755,18 @@ function webGlInit() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); //makes clearing work
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.drawingBufferWidth, gl.drawingBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-  
+
   var rb = gl.createRenderbuffer(); //create RB to store the depth buffer
   gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
   gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, gl.drawingBufferWidth, gl.drawingBufferHeight);
-  
+
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, pickTex, 0);
   gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
-  
+
   gl.pickFb = pickFb;
-  
+
   pickColorBuf = new Uint8Array(4);
-  
+
   pMatrix = mat4.create();
   mat4.perspective(pMatrix, 1.01, gl.drawingBufferWidth / gl.drawingBufferHeight, 20.0, 600000.0);
   var eciToOpenGlMat = [
@@ -1760,8 +1775,8 @@ function webGlInit() {
     0,  1,  0,  0,
     0,  0,  0,  1
   ];
-  mat4.mul(pMatrix, pMatrix, eciToOpenGlMat); //pMat = pMat * ecioglMat 
-  
+  mat4.mul(pMatrix, pMatrix, eciToOpenGlMat); //pMat = pMat * ecioglMat
+
   window.gl = gl;
 }
 
@@ -1778,20 +1793,20 @@ function unProject(mx, my) {
   var glScreenX = (mx / gl.drawingBufferWidth * 2) - 1.0;
   var glScreenY = 1.0 - (my / gl.drawingBufferHeight * 2);
   var screenVec = [glScreenX, glScreenY, -0.01, 1.0]; //gl screen coords
- 
+
   var comboPMat = mat4.create();
   mat4.mul(comboPMat, pMatrix, camMatrix);
   var invMat = mat4.create();
   mat4.invert(invMat, comboPMat);
   var worldVec = vec4.create();
   vec4.transformMat4(worldVec, screenVec, invMat);
- 
+
   return [worldVec[0] / worldVec[3], worldVec[1] / worldVec[3], worldVec[2] / worldVec[3]];
 }
 
 function getEarthScreenPoint(x, y) {
 //  var start = performance.now();
-  
+
   var rayOrigin = getCamPos();
   var ptThru = unProject(x, y);
 
@@ -1802,21 +1817,21 @@ function getEarthScreenPoint(x, y) {
   var toCenterVec = vec3.create();
   vec3.scale(toCenterVec, rayOrigin, -1); //toCenter is just -camera pos because center is at [0,0,0]
   var dParallel = vec3.dot(rayDir, toCenterVec);
-  
+
   var longDir = vec3.create();
   vec3.scale(longDir, rayDir, dParallel); //longDir = rayDir * distParallel
   vec3.add(ptThru, rayOrigin, longDir); //ptThru is now on the plane going through the center of sphere
   var dPerp = vec3.len(ptThru);
-  
+
   var dSubSurf = Math.sqrt(6371*6371 - dPerp*dPerp);
   var dSurf = dParallel - dSubSurf;
-  
+
   var ptSurf = vec3.create();
   vec3.scale(ptSurf, rayDir, dSurf);
   vec3.add(ptSurf, ptSurf, rayOrigin);
-  
+
  // console.log('earthscreenpt: ' + (performance.now() - start) + ' ms');
-  
+
   return ptSurf;
 }
 
@@ -1828,7 +1843,7 @@ function getCamDist() {
 function camSnapToSat(satId) {
   /* this function runs every frame that a satellite is seleected. However, the user might have broken out of the
   zoom snap or angle snap. If so, don't change those targets. */
- 
+
   var sat = satSet.getSat(satId);
 
   if(camAngleSnappedOnSat) {
@@ -1838,9 +1853,9 @@ function camSnapToSat(satId) {
     var pitch = Math.atan2(pos.z, r);
     camSnap(pitch, yaw);
   }
-  
+
   if(camZoomSnappedOnSat) {
-    var camDistTarget = sat.altitude + 6371 + 2000;
+    var camDistTarget = sat.altitude + 6371 + 6000;
     zoomTarget = Math.pow((camDistTarget - DIST_MIN) / (DIST_MAX - DIST_MIN), 1/ZOOM_EXP);
   }
 }
@@ -1874,16 +1889,16 @@ function drawLoop() {
          var pitchTarget = dragStartPitch + yDif*-0.005;
          camPitchSpeed = normalizeAngle(camPitch - pitchTarget) * -0.005;
          camYawSpeed = normalizeAngle(camYaw - yawTarget) * -0.005;
-       } else {  //earth surface point drag  
+       } else {  //earth surface point drag
         var dragPointR = Math.sqrt(dragPoint[0]*dragPoint[0] + dragPoint[1]*dragPoint[1]);
         var dragTargetR = Math.sqrt(dragTarget[0]*dragTarget[0] + dragTarget[1]*dragTarget[1]);
-        
+
         var dragPointLon =  Math.atan2(dragPoint[1], dragPoint[0]);
         var dragTargetLon = Math.atan2(dragTarget[1], dragTarget[0]);
-        
+
         var dragPointLat = Math.atan2(dragPoint[2] , dragPointR);
         var dragTargetLat = Math.atan2(dragTarget[2] , dragTargetR);
-        
+
         var pitchDif = dragPointLat - dragTargetLat;
         var yawDif = normalizeAngle(dragPointLon - dragTargetLon);
         camPitchSpeed = pitchDif * 0.015;
@@ -1894,20 +1909,20 @@ function drawLoop() {
     camPitchSpeed -= (camPitchSpeed * dt * 0.005); //decay speeds when globe is "thrown"
     camYawSpeed -= (camYawSpeed * dt * 0.005);
   }
-  
+
   camPitch += camPitchSpeed * dt;
   camYaw += camYawSpeed * dt;
-  
+
   if(initialRotation) {
     camYaw += initialRotSpeed * dt;
   }
-  
-  if(camSnapMode) { 
+
+  if(camSnapMode) {
     camPitch += (camPitchTarget - camPitch) * 0.003 * dt;
-    
+
     var yawErr = normalizeAngle(camYawTarget - camYaw);
     camYaw += yawErr * 0.003 * dt;
-    
+
  /*   if(Math.abs(camPitchTarget - camPitch) < 0.002 && Math.abs(camYawTarget - camYaw) < 0.002 && Math.abs(zoomTarget - zoomLevel) < 0.002) {
       camSnapMode = false; Stay in camSnapMode forever. Is this a good idea? dunno....
     }*/
@@ -1915,7 +1930,7 @@ function drawLoop() {
   } else {
      zoomLevel = zoomLevel + (zoomTarget - zoomLevel)*dt*0.0075;
   }
-  
+
   if(camPitch > Math.PI/2) camPitch = Math.PI/2;
   if(camPitch < -Math.PI/2) camPitch = -Math.PI/2;
  // camYaw = (camYaw % (Math.PI*2));
@@ -1941,17 +1956,17 @@ function drawScene() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
  // gl.bindFramebuffer(gl.FRAMEBUFFER, gl.pickFb);
- 
+
   camMatrix = mat4.create();
   mat4.identity(camMatrix);
   mat4.translate(camMatrix, camMatrix, [0, getCamDist(), 0]);
   mat4.rotateX(camMatrix, camMatrix, camPitch);
   mat4.rotateZ(camMatrix, camMatrix, -camYaw);
-  
+
   gl.useProgram(gl.pickShaderProgram);
     gl.uniformMatrix4fv(gl.pickShaderProgram.uPMatrix, false, pMatrix);
     gl.uniformMatrix4fv(gl.pickShaderProgram.camMatrix, false,camMatrix);
-   
+
 
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -1962,8 +1977,8 @@ function drawScene() {
   earth.draw(pMatrix, camMatrix);
   satSet.draw(pMatrix, camMatrix);
   orbitDisplay.draw(pMatrix, camMatrix);
- 
-  
+
+
   /* DEBUG - show the pickbuffer on a canvas */
  // debugImageData.data = pickColorMap;
  /* debugImageData.data.set(pickColorMap);
@@ -1983,6 +1998,13 @@ function updateHover() {
     var satPos = satSet.getScreenCoords(satId, pMatrix, camMatrix);
     if(!earthHitTest(satPos.x, satPos.y)) {
       hoverBoxOnSat(satId, satPos.x, satPos.y);
+    } else {
+      hoverBoxOnSat(-1, 0, 0);
+    }
+  } else if (camZoomSnappedOnSat && selectedSat > -1) {
+    var satPos = satSet.getScreenCoords(selectedSat, pMatrix, camMatrix);
+    if(!earthHitTest(satPos.x, satPos.y)) {
+      hoverBoxOnSat(selectedSat, satPos.x, satPos.y);
     } else {
       hoverBoxOnSat(-1, 0, 0);
     }
@@ -2023,11 +2045,11 @@ function getSatIdFromCoord(x, y) {
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, gl.pickFb);
   gl.readPixels(x, gl.drawingBufferHeight - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pickColorBuf);
-  
+
   var pickR = pickColorBuf[0];
   var pickG = pickColorBuf[1];
   var pickB = pickColorBuf[2];
-  
+
  // console.log('picking op: ' + (performance.now() - start) + ' ms');
   return((pickB << 16) | (pickG << 8) | (pickR)) - 1;
 }
@@ -2060,10 +2082,6 @@ function updateUrl() {
 
   window.history.replaceState(null, 'Stuff in Space', url);
 }
-
-
-
-
 
 // **** end main.js ***
 

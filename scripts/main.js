@@ -16,6 +16,8 @@
 var gl;
 var cubeVertIndexBuffer;
 
+var favoriteSatID = "2007-012Q";
+
 var R2D = 180 / Math.PI;
 
 var camYaw = 0;
@@ -129,9 +131,15 @@ $(document).ready(function() {
       }
     }
 
+    if (params.length == 1 && params[0] == "") {
+      // select favorite satellite by default
+      var satID = satSet.getIdFromIntlDes(favoriteSatID)
+      selectSat(satID);
+    }
+
     searchBox.init(satData);
   });
-    
+
 	$('#canvas').on('touchmove', function(evt) {
 		evt.preventDefault();
 	  if(isDragging) {
@@ -252,26 +260,26 @@ $(document).ready(function() {
 function selectSat(satId) {
   selectedSat = satId;
   if(satId === -1) {
-    $('#sat-infobox').fadeOut();
-     orbitDisplay.clearSelectOrbit();
-  } else {
-    camZoomSnappedOnSat = true;
-    camAngleSnappedOnSat = true;
-
-    satSet.selectSat(satId);
- //   camSnapToSat(satId);
-    var sat = satSet.getSat(satId);
-    if(!sat) return;
-    orbitDisplay.setSelectOrbit(satId);
-    $('#sat-infobox').fadeIn();
-    $('#sat-info-title').html(sat.OBJECT_NAME);
-    $('#sat-intl-des').html(sat.intlDes);
-    $('#sat-type').html(sat.OBJECT_TYPE);
-    $('#sat-apogee').html(sat.apogee.toFixed(0) + ' km');
-    $('#sat-perigee').html(sat.perigee.toFixed(0) + ' km');
-    $('#sat-inclination').html((sat.inclination * R2D).toFixed(2) + '°');  
-    $('#sat-period').html(sat.period.toFixed(2) + ' min');
+    // Always re-select the favorite satellite
+    satId = satSet.getIdFromIntlDes(favoriteSatID);
   }
+
+  camZoomSnappedOnSat = true;
+  camAngleSnappedOnSat = true;
+
+  satSet.selectSat(satId);
+  camSnapToSat(satId);
+  var sat = satSet.getSat(satId);
+  if(!sat) return;
+  orbitDisplay.setSelectOrbit(satId);
+  $('#sat-infobox').fadeIn();
+  $('#sat-info-title').html(sat.OBJECT_NAME);
+  $('#sat-intl-des').html(sat.intlDes);
+  $('#sat-type').html(sat.OBJECT_TYPE);
+  $('#sat-apogee').html(sat.apogee.toFixed(0) + ' km');
+  $('#sat-perigee').html(sat.perigee.toFixed(0) + ' km');
+  $('#sat-inclination').html((sat.inclination * R2D).toFixed(2) + '°');
+  $('#sat-period').html(sat.period.toFixed(2) + ' min');
   updateUrl();
 }
 
@@ -430,9 +438,9 @@ function camSnapToSat(satId) {
     var pitch = Math.atan2(pos.z, r);
     camSnap(pitch, yaw);
   }
-  
+
   if(camZoomSnappedOnSat) {
-    var camDistTarget = sat.altitude + 6371 + 2000;
+    var camDistTarget = sat.altitude + 6371 + 6000;
     zoomTarget = Math.pow((camDistTarget - DIST_MIN) / (DIST_MAX - DIST_MIN), 1/ZOOM_EXP);
   }
 }
@@ -575,6 +583,13 @@ function updateHover() {
     var satPos = satSet.getScreenCoords(satId, pMatrix, camMatrix);
     if(!earthHitTest(satPos.x, satPos.y)) {
       hoverBoxOnSat(satId, satPos.x, satPos.y);
+    } else {
+      hoverBoxOnSat(-1, 0, 0);
+    }
+  } else if (camZoomSnappedOnSat && selectedSat > -1) {
+    var satPos = satSet.getScreenCoords(selectedSat, pMatrix, camMatrix);
+    if(!earthHitTest(satPos.x, satPos.y)) {
+      hoverBoxOnSat(selectedSat, satPos.x, satPos.y);
     } else {
       hoverBoxOnSat(-1, 0, 0);
     }
